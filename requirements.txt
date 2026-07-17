@@ -1,0 +1,8 @@
+streamlit
+anthropic
+pdfplumber
+python-docx
+requests
+python-dotenv
+pydantic
+pytest
