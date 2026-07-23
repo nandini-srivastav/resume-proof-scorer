@@ -13,11 +13,22 @@ is on you.
 
 from docx.opc.exceptions import PackageNotFoundError
 from docx import Document
+from rapidfuzz import fuzz
 import zipfile
 import pdfplumber 
 
 MINIMUM_TEXT_LENGTH = 250 # minimum text threshold of a resume
 
+# expanded as tested against real resume     
+CANONICAL_SECTIONS = {
+    "skills": ["skills", "technical skills", "core competencies"],
+    "experience": ["experience", "work experience", "professional experience", "employment history"],
+    "projects": ["projects", "personal projects", "academic projects"],
+    "education": ["education", "academic beckground"],
+    "certifications": ["certifications", "certificates", "licenses"]
+}
+
+# ----------------------------- EXTRACT TEXT FROM RESUME -------------------------------
 def extract_text(file_object: BinaryIO, file_name: str) -> str:
     """
     Extract plain text from a resume file.
@@ -86,7 +97,7 @@ def extract_text(file_object: BinaryIO, file_name: str) -> str:
     if len(text.strip()) < MINIMUM_TEXT_LENGTH:
         raise ValueError(f"No readable text found - possible a scanned PDF: {file_name}")
     
-    # Step 4: Success
+    # ------------ Step 4: Success ------------
     return text
 
 def is_valid_docx(file_object: BinaryIO) -> bool:
@@ -165,11 +176,62 @@ def extract_text_from_docx(file_object: BinaryIO) -> str:
     combined_text = "\n".join(paragraph_text)
     # Step 4 : return combined text
     return combined_text
-     
 
+# ------------------------ DIVIDE RAW TEXT INTO SECTIONS ---------------------------------
 def segment_sections(raw_text: str) -> dict:
-    raise NotImplementedError
+    # Step 1 : Every key starts as an empty list
+    sections = {name: [] for name in CANONICAL_SECTIONS}
+    current_section = None
+    # Step 2 : Split raw text into individual lines 
+    lines = raw_text.splitlines() 
+    # Step 3 : strip white spaces 
+    for line in lines:
+        cleaned_lines = line.strip()
+        # a. skip the blank lines
+        if not cleaned_lines:
+            continue
+        # b.  if this line is a heading - save as current seection, skip to next line
+        #     else - already inside a section
+        matched_section = is_heading(cleaned_lines)
+        
+        if matched_section is not None:
+            current_section = matched_section
+            continue
+        
+        if current_section is not None:
+            sections[current_section].append(cleaned_lines)
+        
+    # Step 4 : return filled-up dictionary    
+    return sections
+        
+def is_heading(line: str) -> str | None:
+    """_Check whether a line of resume text is a section heading.
 
+    Rejects lines longer than a few words (real headings are short),
+    then fuzzy-matches the line against known heading synonyms for
+    each canonical section.
+
+    Args:
+        line: A single line of resume text.
+
+    Returns:
+        The canonical section name if the line matches a known
+        heading, otherwise None.
+    """
+    # If the line has more than 4 words it is not a heading(probably)
+    if len(line.split()) > 4:
+        return None
+    # else - compare the line against every known heading name/synonym 
+    for canonical_name, synonym_list in CANONICAL_SECTIONS.items():
+        for synonym in synonym_list:
+            # if similarity >= 80, return matched section
+            similarity = fuzz.ratio(line.lower(), synonym)
+            if similarity >= 80:
+                return canonical_name
+    # else - return nothing        
+    return None
+    
+    
 
 def extract_github_link(raw_text: str) -> str | None:
     raise NotImplementedError
