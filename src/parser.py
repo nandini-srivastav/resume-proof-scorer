@@ -90,10 +90,10 @@ def extract_text(file_object: BinaryIO, file_name: str) -> str:
     
     # password-protected/corrupted file error 
     except PackageNotFoundError as e:
-        raise ValueError(f"File could not be opened (corrupted or invalid): {filename}") from e
+        raise ValueError(f"File could not be opened (corrupted or invalid): {file_name}") from e
     # deals with anything else that goes wrong  - whatever weird error pdfplumber throws
     except Exception as e:
-        raise ValueError(f"File could not be opened: {filename}") from e
+        raise ValueError(f"File could not be opened: {file_name}") from e
     
     # ------------ Step 3: Reject scanned/image PDFs (no real text layer) ------------
     # Case: file looks like resume visually but there is no actual layer of text - no real characters that a computer can read
@@ -151,12 +151,12 @@ def extract_text_from_pdf(file_object: BinaryIO) -> str:
     with pdfplumber.open(file_object) as pdf:
         # Step 2 : loop over every page
         for page in pdf.pages:
-            pages_text = page.extract_text() or ""
+            page_text = page.extract_text() or ""
             # Step 3 : join pages together
-            pages_text.append(pages_text)
+            pages_text.append(page_text)
     combines_text = "\n".join(pages_text) # every new page will begin with a new-line     
     # Step 4 : return combined text
-    combines_text
+    return combines_text
     
 def extract_text_from_docx(file_object: BinaryIO) -> str:
     """
