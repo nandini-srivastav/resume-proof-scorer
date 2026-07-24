@@ -117,18 +117,18 @@ def is_valid_docx(file_object: BinaryIO) -> bool:
     try:
         # Step 1: Open file as zip file
         with zipfile.ZipFile(file_object) as zf:
-        # Step 2: list file names inside zip file
-        entry_names = zf.namelist()
-        # Step 3: check if the file name has "word/document.xml" in it
-        # result = True/False
-        result = "word/document.xml" in entry_names
+            # Step 2: list file names inside zip file
+            entry_names = zf.namelist()
+            # Step 3: check if the file name has "word/document.xml" in it
+            # result = True/False
+            result = "word/document.xml" in entry_names
     
     # if file doesnt open this exception is raised
     except zipfile.BadZipFile:
         result = False
         
-    file_object.seek(0) # rewind to 0 - Zipfile consmed the stream
-    
+    # rewind to 0 - Zipfile consmed the stream
+    file_object.seek(0) 
     return result
 
 def extract_text_from_pdf(file_object: BinaryIO) -> str:
