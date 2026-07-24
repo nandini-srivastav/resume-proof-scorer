@@ -16,6 +16,7 @@ from docx import Document
 from rapidfuzz import fuzz
 import zipfile
 import pdfplumber 
+import re 
 
 MINIMUM_TEXT_LENGTH = 250 # minimum text threshold of a resume
 
@@ -27,6 +28,8 @@ CANONICAL_SECTIONS = {
     "education": ["education", "academic beckground"],
     "certifications": ["certifications", "certificates", "licenses"]
 }
+GITHUB_PATTERN = r'(?:https?://)?(?:www\.)?github\.com/[\w\-]+(?:/[\w\-\.]+)?'
+LINKEDIN_PATTERN = r'(?:hhtps?://)?(?:www\.)?linkedin\.com/in/[\w\-]+'
 
 # ----------------------------- EXTRACT TEXT FROM RESUME -------------------------------
 def extract_text(file_object: BinaryIO, file_name: str) -> str:
@@ -179,6 +182,23 @@ def extract_text_from_docx(file_object: BinaryIO) -> str:
 
 # ------------------------ DIVIDE RAW TEXT INTO SECTIONS ---------------------------------
 def segment_sections(raw_text: str) -> dict:
+    """
+    Split resume text into labeled sections.
+
+    Scans the text line by line, detecting section headings (Skills,
+    Experience, Projects, Education, Certifications) via is_heading(),
+    and groups all following lines under the most recently found
+    heading. Text before the first detected heading (e.g., name,
+    contact info) is discarded. Sections not found in the resume are
+    still present in the result, with an empty list as their value.
+
+    Args:
+        raw_text: The full extracted resume text.
+
+    Returns:
+        A dict mapping each canonical section name to a list of the
+        text lines found under that section.
+    """
     # Step 1 : Every key starts as an empty list
     sections = {name: [] for name in CANONICAL_SECTIONS}
     current_section = None
@@ -205,7 +225,8 @@ def segment_sections(raw_text: str) -> dict:
     return sections
         
 def is_heading(line: str) -> str | None:
-    """_Check whether a line of resume text is a section heading.
+    """
+    Check whether a line of resume text is a section heading.
 
     Rejects lines longer than a few words (real headings are short),
     then fuzzy-matches the line against known heading synonyms for
@@ -233,5 +254,49 @@ def is_heading(line: str) -> str | None:
     
     
 
-def extract_github_link(raw_text: str) -> str | None:
-    raise NotImplementedError
+def extract_github_link(raw_text: str) -> list[str] | None:
+    """
+    _Find all GitHub links in resume text.
+
+    Searches the full resume text for GitHub profile and/or
+    repository URLs, with or without a protocol/www prefix.
+    Duplicate matches are removed.
+
+    Args:
+        raw_text: The full extracted resume text.
+
+    Returns:
+        A list of unique GitHub URLs found, or None if none were found.
+    """
+    
+    # Step 1 : searches through the raw_text to find if Github regex pattern matches 
+    # returns - list of strings(links)
+    matches = re.findall(GITHUB_PATTERN, raw_text)
+    # Step 2 : remove duplicate links 
+    unique_matches = list(dict.fromkeys(matches))
+    # Step 3 : if no unique links - return nothing
+    if not unique_matches:
+        return None
+    return unique_matches
+
+def extract_linkedin_link(raw_text: str) -> str | None:
+    """
+    Find all LinkedIn profile links in resume text.
+
+    Searches the full resume text for LinkedIn profile URLs, with
+    or without a protocol/www prefix. Duplicate matches are removed.
+
+    Args:
+        raw_text: The full extracted resume text.
+
+    Returns:
+        A list of unique LinkedIn profile URLs found, or None if
+        none were found.
+    """
+    matches = re.findall(LINKEDIN_PATTERN, raw_text)
+    unique_matches = list(dict.fromkeys(matches))
+    
+    if not unique_matches:
+        return None
+    return unique_matches
+    
