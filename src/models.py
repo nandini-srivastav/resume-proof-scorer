@@ -1,11 +1,5 @@
 """
 Data schemas shared across modules.
-
-TODO (yours to design): decide the exact fields you need for
-EvidenceTier, SkillEvidence, and CandidateScore based on what your
-scoring logic in llm_scorer.py and aggregator.py actually produces.
-The shapes below are placeholders to unblock the other stub files —
-change them freely.
 """
 
 from pydantic import BaseModel
@@ -24,3 +18,26 @@ class CandidateScore(BaseModel):
     keyword_score: float
     proof_score: float
     evidence: list[SkillEvidence]
+
+class KeywordMatchResult(BaseModel):
+    """
+    Result of naive keyword-based scoring against a job description.
+
+    Represents how a "dumb" ATS would evaluate a resume — counting
+    literal keyword matches without any judgment on whether the skill
+    is actually demonstrated. Used as the comparison baseline against
+    the evidence-based Proof Score.
+
+    Attributes:
+        skills_matched: Number of JD-required skills mentioned at
+            least once in the resume.
+        total_skills: Total number of skills required by the JD.
+        match_percentage: skills_matched as a percentage of total_skills.
+        total_mentions: Sum of all occurrences of every matched skill,
+            across the whole resume — a high value relative to
+            skills_matched can indicate keyword stuffing.
+    """
+    skills_matched : int
+    total_skilled : int 
+    match_percentage : float
+    total_mentions : int
