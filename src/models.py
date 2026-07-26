@@ -38,6 +38,6 @@ class KeywordMatchResult(BaseModel):
             skills_matched can indicate keyword stuffing.
     """
     skills_matched : int
-    total_skilled : int 
+    total_skills : int 
     match_percentage : float
     total_mentions : int

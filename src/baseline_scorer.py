@@ -43,7 +43,7 @@ def score_resume_by_keywords(jd_skills: list[str], resume_text: str) -> KeywordM
     # Step 2 : loop against each skill mentioned in jd_skills
     for skill in jd_skills:
         # Step 3 : count occurences of skill in resume_text
-        count = count_occurences(skill, resume_text)
+        count = count_occurrences(skill, resume_text)
         # Step 4 : add the occurences count to total_mentions
         total_mentions += count 
         # Step 5 : if the count for a particular jd_skills > 0 increment the skills_matched by 1
@@ -60,7 +60,7 @@ def score_resume_by_keywords(jd_skills: list[str], resume_text: str) -> KeywordM
         total_mentions=total_mentions,
     )
     
-def count_occurences(skill : str, text : str) -> int:
+def count_occurrences(skill : str, text : str) -> int:
     """
     Count how many times a skill appears in a block of text.
 
@@ -78,7 +78,7 @@ def count_occurences(skill : str, text : str) -> int:
     """
     
     # Step 1 : escape any regex special char that might be inside the skill name
-    pattern = r'\b' + re.escape(skill) + r'\b'
+    pattern = r'(?<!\w)' + re.escape(skill) + r'(?!\w)'
     # Step 2 : finds every non-overlapping match of the pattern and returns them as a list
     matches = re.findall(pattern, text, re.IGNORECASE)
     # Step 3 : return the count - how many times a skill appeared?
