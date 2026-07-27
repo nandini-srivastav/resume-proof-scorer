@@ -15,7 +15,7 @@ from src.models import SkillEvidence
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
-def classify_skill_evidence(jd_skills: list[str], sections: dict) -> list[SkillEvidence]:
+def classify_all_skills(jd_skills: list[str], sections: dict) -> list[SkillEvidence]:
   """
   Classify evidence quality for every JD-required skill in a resume.
 
@@ -34,36 +34,36 @@ def classify_skill_evidence(jd_skills: list[str], sections: dict) -> list[SkillE
   Raises:
         ValueError: If Claude's response isn't valid, parseable JSON.
   """
-    # Step 1 : Build a prompt containing skills to check relevant resume sections.
-    prompt = build_prompt(jd_skills, sections)
-    response = client.messages.create(
-      model="claude-sonnet-5",
-      max_tokens=2048,
-      temperature=0,
-      messages=[{"role": "user", "content": prompt}]
-    )
-    # extract text content from response
-    response_text = response.content[0].text
+  # Step 1 : Build a prompt containing skills to check relevant resume sections.
+  prompt = build_prompt(jd_skills, sections)
+  response = client.messages.create(
+    model="claude-sonnet-5",
+    max_tokens=2048,
+    temperature=0,
+    messages=[{"role": "user", "content": prompt}]
+  )
+  # extract text content from response
+  response_text = response.content[0].text
     
-    # Step 2 : Parse Calude's response as a JSON.
-    try:
-      parsed = json.loads(response_text)
-    except json.JSONDecodeError as e:
-      raise ValueError("Claude returned invalid JSON, could not parse skill evidence") from e
-    # Step 3 : if parse succeeds - loop through each skill's result
-    evidence_list = []
-    for item in parsed:
-      # a. Convert it into SkillEvidence object
-      evidence_list.append(
-        SkillEvidence(
-          skill=item["skill"],
-          tier=item["tier"],
-          excerpt=item["excerpt"],
-          github_verified=None,
-        )
+  # Step 2 : Parse Calude's response as a JSON.
+  try:
+    parsed = json.loads(response_text)
+  except json.JSONDecodeError as e:
+    raise ValueError("Claude returned invalid JSON, could not parse skill evidence") from e
+  # Step 3 : if parse succeeds - loop through each skill's result
+  evidence_list = []
+  for item in parsed:
+    # a. Convert it into SkillEvidence object
+    evidence_list.append(
+      SkillEvidence(
+        skill=item["skill"],
+        tier=item["tier"],
+        excerpt=item["excerpt"],
+        github_verified=None,
       )
-    # Step 4 : return one SkillEvidence/skill each carrying its tier & supporting excerpt.
-    return evidence_list
+    )
+  # Step 4 : return one SkillEvidence/skill each carrying its tier & supporting excerpt.
+  return evidence_list
   
 
 def build_prompt(jd_skills: list[str], sections: dict) -> str:
