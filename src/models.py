@@ -8,9 +8,9 @@ from typing import Optional
 
 class SkillEvidence(BaseModel):
     skill: str
-    tier: int  # TODO: define what 1 / 2 / 3 mean and document it here
+    tier: int  
     excerpt: str
-    github_verified: Optional[bool] = None
+    github_verified: Optional[GithubVerification] = None
 
 
 class CandidateScore(BaseModel):
@@ -41,3 +41,26 @@ class KeywordMatchResult(BaseModel):
     total_skills : int 
     match_percentage : float
     total_mentions : int
+    
+class GithubVerification(BaseModel):
+    """
+    Result of checking one skill against a candidate's GitHub repos.
+
+    Two signals are kept separate instead of merged into one bool: whether
+    the skill showed up as an actual repo language (GitHub API), and
+    whether it showed up in repo text (README or description).
+
+    Args:
+        skill (str): The skill being verified, e.g. "React".
+        language_verified (bool): True if the skill was detected as a
+            language in at least one repo.
+        language_evidence (list[str]): Names of repos that matched by language.
+        text_verified (bool): True if the skill appeared in a repo's
+            README or description text.
+        text_evidence (list[str]): Names of repos that matched by text.
+    """
+    skill: str 
+    language_verified: bool
+    language_evidence: list[str] # repo where where skill/tool showed up as a language.
+    text_verified: bool
+    text_evidence: list[str] # repo name where skill/tool showed up in description/README.
