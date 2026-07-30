@@ -39,11 +39,17 @@ def classify_all_skills(jd_skills: list[str], sections: dict) -> list[SkillEvide
   response = client.messages.create(
     model="claude-sonnet-5",
     max_tokens=2048,
-    temperature=0,
     messages=[{"role": "user", "content": prompt}]
   )
   # extract text content from response
-  response_text = response.content[0].text
+  response_text = response.content[0].text.strip()
+  
+  # Claude sometimes wraps JSON in a markdown code fence despite instructions
+  if response_text.startswith("```"):
+    response_text = response_text.strip("`")
+    if response_text.startswith("json"):
+        response_text = response_text[4:]
+    response_text = response_text.strip()
     
   # Step 2 : Parse Calude's response as a JSON.
   try:
