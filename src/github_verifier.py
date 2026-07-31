@@ -102,3 +102,69 @@ def fetch_readme_text(owner: str, repo: str) -> str:
     return content.decode("utf-8")
   except (requests.exception.RequestException, KeyError, UnicodeDecodeError, binascii.Error):
     return ""
+  
+def enrich_repo(username) -> str:
+  """
+  Fetch a candidate's repos plus per-repo languages and README text.
+
+    Args:
+        username (str): GitHub username to look up.
+
+    Returns:
+        list[dict]: Up to 20 repos, each a dict with name, description,
+            languages (dict), and readme (str) attached.
+
+    Raises:
+        ValueError: Propagated from fetch_repo_list if the username
+            is invalid or the GitHub API request fails.
+  """
+  # Step 1 : Get candidate's repo - only have metadata, no repo or README content
+  repo = fetch_repo_list(username=username)
+  
+  enriched = []
+  # Step 2 : Loop over each repo
+  for repo in repos:
+    # a. fetch repo languages and README
+    owner = repo["owner"]["login"]
+    name = repo["name"]
+    # b. build a dict per repo(name, description, languages, README)
+    enriched.append({
+      "name": name,
+      "description": repo["description"] or ""
+      "language": fetch_repo_languages(owner, name)
+      "readme": fetch_readme_text(owner, name)
+    })
+    
+  return enriched
+  
+
+def verify_by_language(skill: str, repos: list[dict]) -> tuple[bool, list[str]]:
+  """
+  This function checks one skill against every repo's language data and 
+  collects which repos "prove" it — for example, checking whether the 
+  candidate's resume claim of "Python" is backed up by GitHub actually 
+  detecting Python in at least one of their repos.
+
+  Args:
+        skill (str): Skill to check, e.g. "Python". Matched case-insensitively.
+        repos (list[dict]): Enriched repos from enrich_repos().
+
+    Returns:
+        tuple[bool, list[str]]: (verified, matching repo names) — verified
+            is True if the skill appeared as a language in at least one repo.
+  """
+  
+  # Step 1 : Initialise an empty list to collect proof
+  matches = [] 
+  # Step 2 : Loop over every repo in enriched list
+  for repo in repos:
+    # Step 3 : Pull out only the languages detected on Github from the repo
+    languages = repo["languages"].key()
+    # Step 4 : Checks whether that skill shows up in the list
+    if skill.lower() in [lang.lower() for lang in languages]:
+      # Step 5 : If matches - add repo name to matches 
+      matches.append(repo["name"])
+  # Step 6 : Check if did at least one repo matched 
+  verified = len(matches) > 0
+  return (verified, matches)
+  
