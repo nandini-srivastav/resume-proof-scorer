@@ -7,6 +7,23 @@ from typing import Optional
 
 
 class SkillEvidence(BaseModel):
+    """
+    Evidence for one skill, as classified from resume text and
+    optionally cross-checked against GitHub.
+
+    Args:
+        skill (str): The skill this evidence is for, e.g. "Python".
+        tier (int): Strength of evidence found in the resume text.
+            # TODO: define what 1 / 2 / 3 mean.
+        excerpt (str): The resume text snippet that justified this tier.
+        github_verified (Optional[GithubVerification]): Language and text
+            verification results from the candidate's GitHub repos, or
+            None if no GitHub profile was available to check.
+    """
+    skill: str
+    tier: int
+    excerpt: str
+    github_verified: Optional[GithubVerification] = None
     skill: str
     tier: int  
     excerpt: str
@@ -14,6 +31,17 @@ class SkillEvidence(BaseModel):
 
 
 class CandidateScore(BaseModel):
+    """
+    Final scoring result for one candidate against a job description.
+
+    Args:
+        candidate_name (str): Candidate's name, extracted from the resume.
+        keyword_score (float): Naive keyword-match score (see baseline_scorer).
+        proof_score (float): Evidence-weighted score combining tier
+            strength and GitHub verification.
+        evidence (list[SkillEvidence]): Per-skill evidence backing the
+            proof_score, one entry per skill checked.
+    """
     candidate_name: str
     keyword_score: float
     proof_score: float
