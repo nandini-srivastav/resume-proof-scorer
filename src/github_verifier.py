@@ -168,3 +168,27 @@ def verify_by_language(skill: str, repos: list[dict]) -> tuple[bool, list[str]]:
   verified = len(matches) > 0
   return (verified, matches)
   
+def verify_by_text(skill: str, repos: list[dict]) -> tuple[bool, list[str]]:
+  """
+  Same as verify_by_language, but instead of checking a fixed set of language 
+  names, it searches free-text (description + README) for the skill, reusing 
+  count_occurrences from baseline_scorer.py.
+
+  Args:
+      skill (str): Skill to check, e.g. "React". Matched using the same
+            word-boundary regex as baseline_scorer.count_occurrences.
+      repos (list[dict]): Enriched repos from enrich_repos().
+
+  Returns:
+      tuple[bool, list[str]]: (verified, matching repo names) — verified
+            is True if the skill appeared in at least one repo's text.
+  """
+  matches = []
+  for repo in repos:
+    text = repo["description"] + " " + repo["readme"]
+    
+    if count_occurences(skill, text) > 0:
+      matches.append(repo["name"])
+      
+  verified = len(matches) > 0
+  return (verified, matches)
