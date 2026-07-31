@@ -192,3 +192,25 @@ def verify_by_text(skill: str, repos: list[dict]) -> tuple[bool, list[str]]:
       
   verified = len(matches) > 0
   return (verified, matches)
+
+def build_github_report(skill: str, repos: list[dict]) -> GithubVerification:
+  """
+  Combine language and text verification into one report for a skill.
+
+  Args:
+      skill (str): Skill to verify.
+      repos (list[dict]): Enriched repos from enrich_repos().
+
+  Returns:
+      GithubVerification: Combined result carrying both signals.
+  """
+  language_verified, language_evidence = verify_by_language(skill, repos)
+  text_verified, text_evidence = verify_by_text(skill, repos)
+  
+  return GithubVerification(
+    skill=skill,
+    language_verified=language_verified,
+    language_evidence=language_evidence,
+    text_verified=text_verified,
+    text_evidence=text_evidence,
+  )
