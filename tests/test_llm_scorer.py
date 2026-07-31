@@ -1,11 +1,6 @@
 """
 Unit tests for src/llm_scorer.py.
 
-Mocked tests (fast, no API cost) test build_prompt() and the
-parsing/error-handling logic in classify_all_skills(). Integration
-tests (marked @pytest.mark.integration) make real API calls — run
-them separately with `pytest -m integration` since they cost money
-and require ANTHROPIC_API_KEY to be set.
 """
 
 import pytest
