@@ -14,6 +14,7 @@ Weighing formula: proof_score = (sum of per-skill score) / (num_of_jdskills * 3)
 """
 
 from src.models import SkillEvidence
+from src.models import CandidateScore
 
 def compute_def_score(skill_evidence: Optional[SkillEvidence]) -> int:
     """
@@ -77,3 +78,23 @@ def compute_proof_score(jd_skills: list[str], evidence_list: list[SkillEvidence]
     return (total / max_possible) * 100
     
 
+def build_candidate_score(candidate_name : str, keyword_results : KeywordMatchResult,
+                          jd_skills : list[str], evidence : list[SkillEvidence]) -> CandidateScore:
+    """
+    Assemble the final CandidateScore combining keyword and proof scores.
+
+    Args:
+        candidate_name (str): Candidate's name.
+        keyword_result (KeywordMatchResult): Output of score_resume_by_keywords.
+        jd_skills (list[str]): All skills required by the job description.
+        evidence (list[SkillEvidence]): Evidence found for this candidate.
+
+    Returns:
+        CandidateScore: Final combined result.
+    """
+    return CandidateScore(
+        candidate_name=candidate_name,
+        keyword_score=keyword_results.match_percentage,
+        proof_score=compute_proof_score(jd_skills, evidence),
+        evidence=evidence,
+    )
