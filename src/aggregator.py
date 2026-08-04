@@ -15,6 +15,7 @@ Weighing formula: proof_score = (sum of per-skill score) / (num_of_jdskills * 3)
 
 from src.models import SkillEvidence
 from src.models import CandidateScore
+from typing import Optional
 
 def compute_def_score(skill_evidence: Optional[SkillEvidence]) -> int:
     """
@@ -31,23 +32,23 @@ def compute_def_score(skill_evidence: Optional[SkillEvidence]) -> int:
             skill that didn't check out scores worse than an unverifiable
             Tier 2 claim, not better.
     """
-    if SkillEvidence is None:
+    if skill_evidence is None:
         return 0
     
     # Step - 1 : If skill shows up inside a real description and also names 
     # something checkable: a specific repo, project name, or link.
-    if SkillEvidence.tier == 3:
+    if skill_evidence.tier == 3:
         # Step - 2 : Pull out GithubVerification object for that skill (None : no username provided)
-        gh = SkillEvidence.github_verified
+        gh = skill_evidence.github_verified
         # Step - 3 : 2 conditions - (a) if - Gihtub check exists, username was given, 
         #                           (b) else - skills showed in an actual repo or README 
-        if gh is not None and (gh.language_verified or gh.text_evidence):
+        if gh is not None and (gh.language_verified or gh.text_verified):
             # assign tier 3
             return 3  
         else : 
             # assign tier 1 - claims didn't hold up
             return 1
-    return SkillEvidence.tier
+    return skill_evidence.tier
 
 def compute_proof_score(jd_skills: list[str], evidence_list: list[SkillEvidence]) -> float:
     """
