@@ -48,5 +48,32 @@ def compute_def_score(skill_evidence: Optional[SkillEvidence]) -> int:
             return 1
     return SkillEvidence.tier
 
-def compute_proof_score(evidence_list: list[SkillEvidence]) -> float:
-    raise NotImplementedError
+def compute_proof_score(jd_skills: list[str], evidence_list: list[SkillEvidence]) -> float:
+    """
+    Aggregate per-skill scores into one 0-100 proof score for a candidate.
+
+    Args:
+        jd_skills (list[str]): All skills required by the job description.
+        evidence (list[SkillEvidence]): Evidence found for skills that
+            appeared in the resume (may be a subset of jd_skills).
+
+    Returns:
+        float: 0-100, same scale as keyword_score, for direct comparison.
+    """
+    # Step - 1 : index evidence by skill name for instant lookup, instead of searching the list each time
+    evidence_by_skill = {e.skill: e for e in evidence_list}
+    
+    # Step - 2 :Initialise score at 0
+    total = 0
+    # Step - 3 : Loops over every skill job description requires
+    for skill in jd_skills:
+        # Step - 4 : Looks up the skill in the dict that is built. (None - found nothing)
+        skill_evidence = evidence_by_skill.get(skill)
+        # Step - 5 : Calls the function on whatever is found, adds a score 0-3
+        total += compute_def_score(skill_evidence)
+        
+    # Step - 6 : If every single JD skill scored a perfect 3 
+    max_possible = len(jd_skills) * 3
+    return (total / max_possible) * 100
+    
+
