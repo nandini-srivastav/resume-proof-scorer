@@ -133,7 +133,53 @@ def build_prompt(jd_skills: list[str], sections: dict) -> str:
   """ 
   
   return prompt
-  
-  
+ 
     
+def build_jd_extraction_prompt(jd_text: str) -> str:
+  """
+  Build the exact prompt sent to Claude to extract skills from a JD.
+
+  Args:
+      jd_text (str): Raw job description text.
+
+  Returns:
+      str: The complete prompt.
+  """
+  
+  return f"""Extract the technical skills, tools, languages, and frameworks 
+required or preferred for this job. Only include specific, checkable skills 
+(e.g. "Python", "React", "AWS") — not soft skills (e.g. "communication",
+"teamwork") and not vague phrases (e.g. "strong technical background").
+
+Return ONLY a JSON array of strings, nothing else. Example format:
+["Python", "React", "PostgreSQL"]
+  
+Job description:
+{jd_text}"""
+
+
+def extract_skills_from_jd(jd_text: str) -> list[str]:
+    """Use Claude to extract required skills from raw job description text.
+
+    Args:
+        jd_text (str): Raw job description text pasted by the user.
+
+    Returns:
+        list[str]: Extracted skill names. Intended to be shown to the user
+            for review/editing before use — extraction can over- or
+            under-include skills, this is a starting point, not final.
+    """
     
+    prompt = build_jd_extraction_prompt(jd_text)
+
+    response = client.messages.create(
+        model="claude-sonnet-5",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    text = response.content[0].text
+    text = strip_markdown_fences(text)
+    skills = json.loads(text)
+
+    return skills
