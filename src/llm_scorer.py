@@ -42,14 +42,8 @@ def classify_all_skills(jd_skills: list[str], sections: dict) -> list[SkillEvide
     messages=[{"role": "user", "content": prompt}]
   )
   # extract text content from response
-  response_text = response.content[0].text.strip()
-  
-  # Claude sometimes wraps JSON in a markdown code fence despite instructions
-  if response_text.startswith("```"):
-    response_text = response_text.strip("`")
-    if response_text.startswith("json"):
-        response_text = response_text[4:]
-    response_text = response_text.strip()
+  response_text = response.content[0].text
+  response_text = strip_markdown_fences(response_text)
     
   # Step 2 : Parse Calude's response as a JSON.
   try:
@@ -70,6 +64,25 @@ def classify_all_skills(jd_skills: list[str], sections: dict) -> list[SkillEvide
     )
   # Step 4 : return one SkillEvidence/skill each carrying its tier & supporting excerpt.
   return evidence_list
+
+def strip_markdown_fences(text: str) -> str:
+    """
+    Remove markdown code fences Claude sometimes wraps JSON responses in.
+
+    Args:
+        text (str): Raw text from Claude's response.
+
+    Returns:
+        str: Text with leading/trailing ```json or ``` fences removed,
+            ready to pass to json.loads().
+    """
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.strip("`")
+        if text.startswith("json"):
+            text = text[4:]
+        text = text.strip()
+    return text
   
 
 def build_prompt(jd_skills: list[str], sections: dict) -> str:
