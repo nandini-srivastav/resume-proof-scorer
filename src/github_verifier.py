@@ -103,9 +103,9 @@ def fetch_readme_text(owner: str, repo: str) -> str:
   except (requests.exception.RequestException, KeyError, UnicodeDecodeError, binascii.Error):
     return ""
   
-def enrich_repo(username) -> str:
-  """
-  Fetch a candidate's repos plus per-repo languages and README text.
+def enrich_repos(username) -> list[dict]:
+    """
+    Fetch a candidate's repos plus per-repo languages and README text.
 
     Args:
         username (str): GitHub username to look up.
@@ -117,25 +117,21 @@ def enrich_repo(username) -> str:
     Raises:
         ValueError: Propagated from fetch_repo_list if the username
             is invalid or the GitHub API request fails.
-  """
-  # Step 1 : Get candidate's repo - only have metadata, no repo or README content
-  repo = fetch_repo_list(username=username)
-  
-  enriched = []
-  # Step 2 : Loop over each repo
-  for repo in repos:
-    # a. fetch repo languages and README
-    owner = repo["owner"]["login"]
-    name = repo["name"]
-    # b. build a dict per repo(name, description, languages, README)
-    enriched.append({
-      "name": name,
-      "description": repo["description"] or ""
-      "language": fetch_repo_languages(owner, name)
-      "readme": fetch_readme_text(owner, name)
-    })
-    
-  return enriched
+    """
+    repos = fetch_repo_list(username)
+
+    enriched = []
+    for repo in repos:
+        owner = repo["owner"]["login"]
+        name = repo["name"]
+        enriched.append({
+            "name": name,
+            "description": repo["description"] or "",
+            "languages": fetch_repo_languages(owner, name),
+            "readme": fetch_readme_text(owner, name),
+        })
+
+    return enriched
   
 
 def verify_by_language(skill: str, repos: list[dict]) -> tuple[bool, list[str]]:
