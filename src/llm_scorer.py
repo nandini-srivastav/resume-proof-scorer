@@ -42,7 +42,7 @@ def classify_all_skills(jd_skills: list[str], sections: dict) -> list[SkillEvide
     messages=[{"role": "user", "content": prompt}]
   )
   # extract text content from response
-  response_text = response.content[0].text
+  response_text = get_response_text(response)
   response_text = strip_markdown_fences(response_text)
     
   # Step 2 : Parse Calude's response as a JSON.
@@ -191,7 +191,7 @@ def extract_skills_from_jd(jd_text: str) -> list[str]:
         messages=[{"role": "user", "content": prompt}]
     )
 
-    text = response.content[0].text
+    text = get_response_text(response)
     text = strip_markdown_fences(text)
     skills = json.loads(text)
 
@@ -231,5 +231,26 @@ def extract_candidate_name(resume_text: str) -> str:
         messages=[{"role": "user", "content": prompt}]
     )
 
-    name = response.content[0].text.strip()
+    name = get_response_text(response).strip()
     return name
+
+def get_response_text(response) -> str:
+    """Extract the text content from a Claude response.
+
+    Skips any ThinkingBlock entries that may precede the text block —
+    response.content[0] isn't reliably the text block when extended
+    thinking is triggered on a given request.
+
+    Args:
+        response: The response object from client.messages.create().
+
+    Returns:
+        str: The text of the first text block found.
+
+    Raises:
+        ValueError: If no text block exists in the response content.
+    """
+    for block in response.content:
+        if block.type == "text":
+            return block.text
+    raise ValueError("No text block found in Claude's response")
