@@ -1,7 +1,6 @@
 """
 Loads configuration/secrets from environment variables.
-Boilerplate only — nothing to implement here beyond adding new
-config values as the project grows.
+
 """
 
 import os
@@ -9,8 +8,34 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+def get_secret(key: str) -> str:
+    """
+    Get a secret value, checking Streamlit's secrets store first
+    (for cloud deployment), falling back to environment variables /
+    .env (for local development).
 
-if not ANTHROPIC_API_KEY:
-    raise EnvironmentError("Missing ANTHROPIC_API_KEY — copy .env.example to .env and fill it in.")
+    Args:
+        key (str): Secret name, e.g. "ANTHROPIC_API_KEY".
+
+    Returns:
+        str: The secret value.
+
+    Raises:
+        EnvironmentError: If the key isn't found in either location.
+    """
+    try:
+        import streamlit as st
+        if key in st.secrets:
+            return st.secrets[key]
+    except (ImportError, FileNotFoundError):
+        pass
+
+    value = os.environ.get(key)
+    if value:
+        return value
+
+    raise EnvironmentError(f"{key} not found in Streamlit secrets or environment")
+
+
+ANTHROPIC_API_KEY = get_secret("ANTHROPIC_API_KEY")
+GITHUB_TOKEN = get_secret("GITHUB_TOKEN")
