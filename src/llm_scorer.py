@@ -196,3 +196,40 @@ def extract_skills_from_jd(jd_text: str) -> list[str]:
     skills = json.loads(text)
 
     return skills
+
+def build_name_extraction_prompt(resume_text: str) -> str:
+    """Build the exact prompt sent to Claude to extract the candidate's name.
+
+    Args:
+        resume_text (str): Raw extracted resume text.
+
+    Returns:
+        str: The complete prompt.
+    """
+    return f"""What is the candidate's full name on this resume? Respond with
+ONLY the name, nothing else — no labels, no punctuation, no explanation.
+If you cannot confidently determine a name, respond with exactly: Unknown
+
+Resume text:
+{resume_text}"""
+
+
+def extract_candidate_name(resume_text: str) -> str:
+    """Use Claude to extract the candidate's name from resume text.
+
+    Args:
+        resume_text (str): Raw extracted resume text.
+
+    Returns:
+        str: The candidate's name, or "Unknown" if it can't be determined.
+    """
+    prompt = build_name_extraction_prompt(resume_text)
+
+    response = client.messages.create(
+        model="claude-sonnet-5",
+        max_tokens=64,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    name = response.content[0].text.strip()
+    return name
