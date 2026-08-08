@@ -4,9 +4,18 @@ Unit tests for src/llm_scorer.py.
 """
 
 import pytest
+import json
 from unittest.mock import patch, MagicMock
 
-from src.llm_scorer import classify_all_skills, build_prompt
+from src.llm_scorer import (
+    classify_all_skills,
+    build_prompt,
+    strip_markdown_fences,
+    extract_skills_from_jd,
+    build_jd_extraction_prompt,
+    extract_candidate_name,
+    build_name_extraction_prompt,
+)
 from src.models import SkillEvidence
 
 
@@ -139,3 +148,111 @@ def test_classify_all_skills_real_api_tier_3_with_link():
     result = classify_all_skills(["Python"], sections)
     assert len(result) == 1
     assert result[0].tier == 3
+    
+# ---------------------------------------------------------------------
+# strip_markdown_fences()
+# ---------------------------------------------------------------------
+
+def test_strip_markdown_fences_removes_json_fence():
+    text = '```json\n["Python", "React"]\n```'
+    result = strip_markdown_fences(text)
+    assert result == '["Python", "React"]'
+
+
+def test_strip_markdown_fences_removes_plain_fence():
+    text = '```\n["Python", "React"]\n```'
+    result = strip_markdown_fences(text)
+    assert result == '["Python", "React"]'
+
+
+def test_strip_markdown_fences_no_fence_returns_unchanged():
+    text = '["Python", "React"]'
+    result = strip_markdown_fences(text)
+    assert result == '["Python", "React"]'
+
+
+def test_strip_markdown_fences_strips_surrounding_whitespace():
+    text = '   ["Python", "React"]   '
+    result = strip_markdown_fences(text)
+    assert result == '["Python", "React"]'
+
+
+# ---------------------------------------------------------------------
+# extract_skills_from_jd()
+# ---------------------------------------------------------------------
+
+@patch("src.llm_scorer.client.messages.create")
+def test_extract_skills_from_jd_returns_list(mock_create):
+    mock_create.return_value = make_mock_response('["Python", "React", "SQL"]')
+
+    result = extract_skills_from_jd("We need a Python and React developer with SQL experience.")
+
+    assert result == ["Python", "React", "SQL"]
+
+
+@patch("src.llm_scorer.client.messages.create")
+def test_extract_skills_from_jd_handles_markdown_fenced_response(mock_create):
+    mock_create.return_value = make_mock_response('```json\n["Python", "AWS"]\n```')
+
+    result = extract_skills_from_jd("Looking for a Python developer with AWS knowledge.")
+
+    assert result == ["Python", "AWS"]
+
+
+@patch("src.llm_scorer.client.messages.create")
+def test_extract_skills_from_jd_raises_on_invalid_json(mock_create):
+    mock_create.return_value = make_mock_response("Sure, here are the skills: Python, React")
+
+    with pytest.raises(json.JSONDecodeError):
+        extract_skills_from_jd("Some job description.")
+
+
+# ---------------------------------------------------------------------
+# extract_candidate_name()
+# ---------------------------------------------------------------------
+
+@patch("src.llm_scorer.client.messages.create")
+def test_extract_candidate_name_returns_name(mock_create):
+    mock_create.return_value = make_mock_response("Jane Doe")
+
+    result = extract_candidate_name("Jane Doe\nSoftware Engineer\njane@example.com")
+
+    assert result == "Jane Doe"
+
+
+@patch("src.llm_scorer.client.messages.create")
+def test_extract_candidate_name_strips_whitespace(mock_create):
+    mock_create.return_value = make_mock_response("  Jane Doe  \n")
+
+    result = extract_candidate_name("Jane Doe\nSoftware Engineer")
+
+    assert result == "Jane Doe"
+
+
+@patch("src.llm_scorer.client.messages.create")
+def test_extract_candidate_name_returns_unknown_when_undetermined(mock_create):
+    mock_create.return_value = make_mock_response("Unknown")
+
+    result = extract_candidate_name("garbled unreadable text with no clear name")
+
+    assert result == "Unknown"
+
+
+# ---------------------------------------------------------------------
+# Integration tests (real API calls)
+# ---------------------------------------------------------------------
+
+@pytest.mark.integration
+def test_extract_skills_from_jd_real_api():
+    jd_text = "We are looking for a Software Engineer with experience in Python, React, and PostgreSQL."
+    result = extract_skills_from_jd(jd_text)
+    assert isinstance(result, list)
+    assert len(result) > 0
+
+
+@pytest.mark.integration
+def test_extract_candidate_name_real_api():
+    resume_text = "Jane Doe\nSoftware Engineer\njane.doe@email.com\n\nExperience:\nBuilt several Python applications."
+    result = extract_candidate_name(resume_text)
+    assert isinstance(result, str)
+    assert result != ""
