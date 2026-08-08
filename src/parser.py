@@ -298,5 +298,26 @@ def extract_linkedin_link(raw_text: str) -> str | None:
     
     if not unique_matches:
         return None
-    return unique_matches
+    return unique_matches    
+
+def extract_github_username(url: str) -> str:
+    """
+    Extract the GitHub username from a profile or repo URL.
+
+    Args:
+        url (str): A GitHub URL, e.g. "https://github.com/johndoe" or
+            "github.com/johndoe/some-repo".
+
+    Returns:
+        str: The username, e.g. "johndoe".
+
+    Raises:
+        ValueError: If no username can be extracted from the URL.
+    """
     
+    match = re.search(r"github\.com/([A-Za-z0-9-]+)", url)
+
+    if match:
+        return match.group(1)
+
+    raise ValueError(f"Could not extract GitHub username from URL: {url}")
