@@ -18,30 +18,12 @@ _(to be drafted — will include a Mermaid diagram)_
 
 ## 5. APIs & Dependencies
 
-<<<<<<< HEAD
-_(to be drafted)_
-
-## 6. Edge Cases
-
-# _(to be drafted)_
-
 LLM API (Claude or OpenAI) for skill extraction and evidence-tier classification only — not for final scoring math. GitHub REST API for repo language stats and commit activity, used to verify claimed skills when a candidate links their profile. pdfplumber / python-docx for resume text extraction. Streamlit for the UI. SQLite for persistence (candidate scores, evidence, run history) — upgradeable to Postgres later if needed.
 
 ## 6. Edge Cases
 
 Scanned or image-based PDFs with no extractable text (needs OCR fallback or a clear "unsupported format" failure, never a silent wrong score). Multi-column or creative resume layouts that scramble text extraction order. No GitHub link provided (must degrade gracefully, never penalize). GitHub API rate limits on unauthenticated calls (requires a personal access token plus caching). Skill name variants needing normalization ("React" / "ReactJS" / "React.js"). Resumes long enough to hit LLM context limits, requiring chunking. Candidates writing verbose, fabricated-sounding "evidence" with fake specifics — acknowledged as a known limitation rather than solved. Poorly written or vague job descriptions, which should degrade the extraction quality gracefully rather than fail outright.
 
-> > > > > > > 3dfb79ca0a04f86b13d5ae5dae9bff62ab313f64
-
-## 7. Tech Stack Decisions
-
-See `docs/adr/` for individual decision records.
-
 ## 8. Production Readiness Checklist
 
-<<<<<<< HEAD
-_(to be drafted)_
-=======
 Environment/secrets handled via .env, never hardcoded. Input validation on every API boundary (Pydantic). Real error handling, not bare try/excepts. Unit tests on parsing and scoring logic, plus at least one end-to-end integration test. GitHub Actions running tests on push. Dockerized so it runs anywhere. Caching/rate-limit handling on both the LLM and GitHub API calls. README with architecture diagram, not just usage instructions.
-
-> > > > > > > 3dfb79ca0a04f86b13d5ae5dae9bff62ab313f64
